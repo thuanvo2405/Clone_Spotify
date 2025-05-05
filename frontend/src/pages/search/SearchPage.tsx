@@ -7,13 +7,13 @@ import { Clock, Play } from "lucide-react";
 import NotFound from "./components/NotFound";
 const SearchPage = () => {
   const { isLoading, songsSearching } = useMusicStore();
-  const { currentSong, isPlaying, setCurrentSong } = usePlayerStore();
-  if (isLoading) return null;
+  const { currentSong, isPlaying, playAlbum } = usePlayerStore();
 
   const handlePlaySong = (index: number) => {
-    const song = songsSearching[index];
-    setCurrentSong(song); // Cập nhật bài hát hiện tại từ state
+    playAlbum(songsSearching, index);
   };
+
+  if (isLoading) return null;
 
   return (
     <>

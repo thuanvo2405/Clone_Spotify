@@ -41,3 +41,13 @@ export interface User {
   fullName: string;
   imageURL: string;
 }
+
+export interface Playlist {
+  _id: string;
+  title: string;
+  description: string;
+  imageURL: string;
+  isPublic: boolean;
+  songs: Song[];
+  user: User;
+}

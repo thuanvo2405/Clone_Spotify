@@ -4,9 +4,16 @@ import { cn } from "@/lib/utils";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { SignedIn } from "@clerk/clerk-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { HomeIcon, Library, MessageCircle, Search } from "lucide-react";
+import {
+  HomeIcon,
+  Library,
+  MessageCircle,
+  Search,
+  BookHeadphones,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import toast from "react-hot-toast";
 
 const LeftSidebar = () => {
@@ -62,6 +69,18 @@ const LeftSidebar = () => {
               <span className="hidden md:inline">Message</span>
             </Link>
           </SignedIn>
+          <Link
+            to={"/playlist"}
+            className={cn(
+              buttonVariants({
+                variant: "ghost",
+                className: "w-full justify-start text-white hover:bg-zinc-800",
+              })
+            )}
+          >
+            <BookHeadphones className="mr-2 size-5" />
+            <span className="hidden md:inline">Playlist</span>
+          </Link>
           {!searchInputToggle ? (
             <button
               onClick={() => setSearchInputToggle(true)}

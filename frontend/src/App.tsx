@@ -9,6 +9,8 @@ import AdminPage from "./pages/admin/AdminPage";
 import { Toaster } from "react-hot-toast";
 import NotFoundPage from "./pages/404/NotFoundPage";
 import SearchPage from "./pages/search/SearchPage";
+import Playlist from "./pages/playlist/Playlist";
+import CreatePlaylist from "./pages/playlist/components/CreatePlaylist";
 function App() {
   return (
     <>
@@ -25,6 +27,9 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/albums/:albumId" element={<AlbumPage />} />
+          <Route path="/playlist" element={<Playlist />} />
+          <Route path="/playlist/:id" element={<CreatePlaylist />} />
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
