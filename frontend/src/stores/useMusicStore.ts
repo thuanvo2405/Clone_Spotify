@@ -12,6 +12,7 @@ interface MusicStore {
   featuredSongs: Song[];
   madeForYouSongs: Song[];
   trendingSongs: Song[];
+  songsSearching: Song[];
   stats: Stats;
 
   fetchAlbums: () => Promise<void>;
@@ -23,6 +24,7 @@ interface MusicStore {
   fetchTrendingSongs: () => Promise<void>;
   deleteSong: (id: string) => Promise<void>;
   deleteAlbum: (id: string) => Promise<void>;
+  searchSongs: (name: string) => Promise<void>;
 }
 
 export const useMusicStore = create<MusicStore>((set) => ({
@@ -33,6 +35,7 @@ export const useMusicStore = create<MusicStore>((set) => ({
   currentAlbum: null,
   featuredSongs: [],
   madeForYouSongs: [],
+  songsSearching: [],
   trendingSongs: [],
   stats: {
     totalSongs: 0,
@@ -155,6 +158,19 @@ export const useMusicStore = create<MusicStore>((set) => ({
       set({ trendingSongs: response.data });
     } catch (error: any) {
       set({ error: error.response.data.message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  searchSongs: async (name: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axiosInstance.post(`/songs/search`, { name });
+      console.log(response);
+      set({ songsSearching: response.data.songs });
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || "Something went wrong" });
     } finally {
       set({ isLoading: false });
     }

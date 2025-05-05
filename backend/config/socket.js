@@ -24,7 +24,6 @@ export const initializeSocket = (server) => {
     });
 
     socket.on("update_activity", ({ userID, activity }) => {
-      console.log("activity updated", userID, activity);
       userActivities.set(userID, activity);
       io.emit("activity_updated", { userID, activity });
     });

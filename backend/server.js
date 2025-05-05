@@ -7,7 +7,7 @@ import { connectDB } from "./config/db.js";
 import cors from "cors";
 import { createServer } from "http";
 import cron from "node-cron";
-import fs from "fs"
+import fs from "fs";
 import { initializeSocket } from "./config/socket.js";
 dotenv.config();
 
@@ -45,7 +45,6 @@ app.use(
   })
 );
 
-//cron
 const tempDir = path.join(process.cwd(), "tmp");
 cron.schedule("0 * * * *", () => {
   if (fs.existsSync(tempDir)) {
