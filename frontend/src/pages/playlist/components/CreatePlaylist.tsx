@@ -8,7 +8,7 @@ import { usePlaylistStore } from "@/stores/usePlaylistStore";
 import { Clock, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const image =
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHMnibsrCdQM4GqpfmfWwgYmyapcwUVywwrQ&s";
@@ -29,6 +29,8 @@ const CreatePlaylist = () => {
   };
   const { id } = useParams();
   const playlistId = id?.toString();
+  console.log(playlistId);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getSongsInPlaylist(playlistId!);
@@ -53,6 +55,10 @@ const CreatePlaylist = () => {
             <button
               className="p-2 rounded-full bg-neutral-700/50 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-300 group"
               aria-label="Xóa playlist"
+              onClick={async () => {
+                await deletePlaylist(playlistId!);
+                await navigate("/playlist");
+              }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -67,10 +73,7 @@ const CreatePlaylist = () => {
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 />
               </svg>
-              <div
-                className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-800 text-xs text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-                onClick={() => deletePlaylist(playlistId!)}
-              >
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-800 text-xs text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                 Xóa playlist
               </div>
             </button>

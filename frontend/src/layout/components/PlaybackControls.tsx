@@ -144,7 +144,7 @@ export const PlaybackControls = () => {
               value={[currentTime]}
               max={duration || 100}
               step={1}
-              className="w-full hover:cursor-grab active:cursor-grabbing"
+              className="w-full hover:cursor-grab active:cursor-grabbing bg-zinc-800"
               onValueChange={handleSeek}
             />
             <div className="text-xs text-zinc-400">{formatTime(duration)}</div>
@@ -187,7 +187,7 @@ export const PlaybackControls = () => {
               value={[volume]}
               max={100}
               step={1}
-              className="w-24 hover:cursor-grab active:cursor-grabbing"
+              className="w-24 hover:cursor-grab active:cursor-grabbing bg-zinc-800"
               onValueChange={(value) => {
                 setVolume(value[0]);
                 if (audioRef.current) {

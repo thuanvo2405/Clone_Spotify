@@ -75,11 +75,14 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
   deletePlaylist: async (playlistID) => {
     set({ isLoading: true, error: null });
     try {
-      await axiosInstance.delete(`/playlists/${playlistID}`);
+      console.log(1);
+      const res = await axiosInstance.delete(`/playlists/${playlistID}`);
+      console.log("Logs from backend:", res.data.logs);
       set((state) => ({
         playlists: state.playlists.filter((p) => p._id !== playlistID),
       }));
     } catch (err: any) {
+      console.error("Error logs from backend:", err.response?.data?.logs);
       set({ error: err.response?.data?.error || "Failed to delete playlist" });
     } finally {
       set({ isLoading: false });
@@ -109,7 +112,6 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
 
   removeSongFromPlaylist: async (playlistID: string, songID: string) => {
     set({ isLoading: true, error: null });
-    console.log(playlistID, songID);
     try {
       const res = await axiosInstance.delete(
         `/playlists/${playlistID}/delete-song/${songID}`,

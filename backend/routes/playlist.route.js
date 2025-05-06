@@ -17,8 +17,8 @@ router.get("/:id/songs", getSongFromPlaylist); //done
 
 // Playlist
 router.post("/", createPlaylist); //done
-router.put("/:playlistID", updatePlaylist);
-router.delete("/:playlistID", deletePlaylist);
+router.put("/:playlistID", updatePlaylist); //doing
+router.delete("/:playlistID", deletePlaylist); //done
 
 router.post("/add-song", addSongPlaylist); //done
 router.delete("/:playlistID/delete-song/:songID", deleteSongPlaylist); //done

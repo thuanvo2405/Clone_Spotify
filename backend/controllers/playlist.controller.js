@@ -62,18 +62,17 @@ export const updatePlaylist = async (req, res) => {
 
 export const deletePlaylist = async (req, res) => {
   try {
-    const { playlistID } = req.body;
-    const userID = req.auth.userId;
-
+    const { playlistID } = req.params;
+    const user = await User.findOne({ clerkID: req.auth.userId });
     const playlist = await Playlist.findById(playlistID);
+
     if (!playlist) {
       return res.status(404).json({ error: "Playlist not found" });
     }
 
-    if (!playlist.user.equals(userID)) {
+    if (!playlist.user.equals(user._id)) {
       return res.status(403).json({ error: "Unauthorized access" });
     }
-
     await Playlist.findByIdAndDelete(playlistID);
     res.json({ message: "Playlist deleted successfully" });
   } catch (error) {
@@ -166,7 +165,6 @@ export const changeVisibility = async (req, res) => {
 };
 
 export const getMyPlayList = async (req, res) => {
-  console.log(1);
   try {
     const userId = await User.findOne({ clerkID: req.auth.userId });
     if (!userId) {
