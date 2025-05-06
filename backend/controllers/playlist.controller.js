@@ -2,17 +2,7 @@ import cloudinary from "../config/cloudinary.js";
 import { Playlist } from "../models/playlist.model.js";
 import { Song } from "../models/song.model.js";
 import { User } from "./../models/user.model.js";
-const uploadToCloudinary = async (file) => {
-  try {
-    const result = await cloudinary.uploader.upload(file.tempFilePath, {
-      resource_type: "auto",
-    });
-    return result.secure_url;
-  } catch (error) {
-    console.log("Error in uploadToCloudinary", error);
-    throw new Error("Error uploading to cloudinay");
-  }
-};
+
 
 export const createPlaylist = async (req, res) => {
   try {
@@ -35,27 +25,46 @@ export const createPlaylist = async (req, res) => {
 };
 
 export const updatePlaylist = async (req, res) => {
+  console.log(1);
   try {
     const { playlistID } = req.params;
-    const userID = req.auth.userId;
     const { title, description, imageURL } = req.body;
+    const clerkID = req.auth.userId;
+    let cloudinaryResponse = null;
+    if (imageURL) {
+      cloudinaryResponse = await cloudinary.uploader.upload(imageURL, {
+        folder: "playlists",
+      });
+    }
+    console.log(cloudinaryResponse);
+    const user = await User.findOne({ clerkID });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     const playlist = await Playlist.findById(playlistID);
     if (!playlist) {
       return res.status(404).json({ error: "Playlist not found" });
     }
 
-    if (!playlist.user.equals(userID)) {
+    if (!playlist.user.equals(user._id)) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
     if (title !== undefined) playlist.title = title;
     if (description !== undefined) playlist.description = description;
-    if (imageURL !== undefined) playlist.imageURL = imageURL;
+
+    if (cloudinaryResponse) {
+      playlist.imageURL = cloudinaryResponse.secure_url;
+    } else if (imageURL === undefined) {
+      playlist.imageURL = "/defaultImagepPlaylist.png";
+    }
+    console.log(1);
 
     await playlist.save();
     res.json(playlist);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

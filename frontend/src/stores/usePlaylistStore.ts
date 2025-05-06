@@ -58,16 +58,30 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
 
   updatePlaylist: async (playlistID, data) => {
     set({ isLoading: true, error: null });
+    if (!playlistID || !data) {
+      set({ error: "Playlist ID and data are required" });
+      set({ isLoading: false });
+      return;
+    }
+    console.log(data);
     try {
       const res = await axiosInstance.put(`/playlists/${playlistID}`, data);
+      console.log(5);
       set((state) => ({
         playlists: state.playlists.map((p) =>
           p._id === playlistID ? res.data : p
         ),
       }));
+      console.log(6);
     } catch (err: any) {
-      set({ error: err.response?.data?.error || "Failed to update playlist" });
+      console.log(7);
+
+      set({
+        error: err.response?.data?.error || "Failed to update playlist",
+      });
     } finally {
+      console.log(8);
+
       set({ isLoading: false });
     }
   },

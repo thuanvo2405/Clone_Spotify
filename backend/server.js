@@ -18,6 +18,7 @@ import songRoutes from "./routes/song.route.js";
 import statRoutes from "./routes/stat.route.js";
 import authRoutes from "./routes/auth.route.js";
 import playlistRoutes from "./routes/playlist.route.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -25,8 +26,9 @@ const PORT = process.env.PORT;
 const __dirname = path.resolve();
 const httpServer = createServer(app);
 initializeSocket(httpServer);
-
 app.use(express.json());
+app.use(cookieParser());
+
 app.use(clerkMiddleware());
 app.use(
   fileUpload({
@@ -39,6 +41,7 @@ app.use(
   })
 );
 
+app.use(express.json({ limit: "10mb" }));
 app.use(
   cors({
     origin: "http://localhost:5173",
