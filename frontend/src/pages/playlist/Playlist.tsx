@@ -5,10 +5,18 @@ import { Plus } from "lucide-react"; // icon dấu cộng
 import { usePlaylistStore } from "@/stores/usePlaylistStore";
 import { useNavigate } from "react-router-dom";
 import SectionPlaylistGrid from "./components/SectionPlaylistGrid";
+import { SignedIn } from "@clerk/clerk-react";
 
 const Playlist = () => {
-  const { createPlaylist, playlists, fetchMyPlaylists, isLoading } =
-    usePlaylistStore();
+  const {
+    createPlaylist,
+    playlists,
+    fetchMyPlaylists,
+    isLoading,
+    popularPlaylist,
+    fetchPopularPlaylist,
+  } = usePlaylistStore();
+
   const navigate = useNavigate();
   const handleCreatePlaylist = async () => {
     const res = await createPlaylist();
@@ -20,9 +28,9 @@ const Playlist = () => {
 
   useEffect(() => {
     fetchMyPlaylists();
-  }, [fetchMyPlaylists]);
+    fetchPopularPlaylist();
+  }, [fetchMyPlaylists, fetchPopularPlaylist]);
 
-  console.log(playlists);
   return (
     <div className="h-full flex flex-col space-y-4">
       <div className="flex items-center justify-between px-4 pt-4">
@@ -40,19 +48,17 @@ const Playlist = () => {
 
       <ScrollArea className="h-full rounded-md px-4 pb-4">
         <div className="space-y-8">
-          <SectionPlaylistGrid
-            title="My Playlist"
-            playlists={playlists}
-            isLoading={isLoading}
-          />
-          <SectionPlaylistGrid
-            title="Your Follow"
-            playlists={playlists}
-            isLoading={isLoading}
-          />
+          <SignedIn>
+            <SectionPlaylistGrid
+              title="My Playlist"
+              playlists={playlists}
+              isLoading={isLoading}
+            />
+          </SignedIn>
+
           <SectionPlaylistGrid
             title="Most Popular"
-            playlists={playlists}
+            playlists={popularPlaylist}
             isLoading={isLoading}
           />
         </div>

@@ -4,21 +4,21 @@ import { useState } from "react";
 
 type PlaylistFormProps = {
   onToggleForm: () => void;
+  playlistId: string;
 };
 
-const PlaylistForm = ({ onToggleForm }: PlaylistFormProps) => {
+const PlaylistForm = ({ onToggleForm, playlistId }: PlaylistFormProps) => {
   const [playlist, setPlaylist] = useState({
     title: "",
     description: "",
-    imageURL: "",
+    imageFile: null as File | null,
   });
 
   const { updatePlaylist, fetchMyPlaylists } = usePlaylistStore();
 
-  const hanldeUpdatePlaylist = async () => {
-    await updatePlaylist("6818e40394ecbd6e56a57806", playlist);
+  const handleUpdatePlaylist = async () => {
+    await updatePlaylist(playlistId, playlist);
     await fetchMyPlaylists();
-
     onToggleForm();
   };
 
@@ -27,7 +27,7 @@ const PlaylistForm = ({ onToggleForm }: PlaylistFormProps) => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPlaylist({ ...playlist, imageURL: reader.result as string });
+        setPlaylist({ ...playlist, imageFile: file });
       };
       reader.readAsDataURL(file);
     }
@@ -44,11 +44,11 @@ const PlaylistForm = ({ onToggleForm }: PlaylistFormProps) => {
         </div>
 
         <div className="flex gap-4 mb-4">
-          <div className="relative bg-neutral-900 hover:bg-neutral-800 flex  justify-center items-center rounded-md w-40 h-40 overflow-hidden">
-            {playlist.imageURL ? (
+          <div className="relative bg-neutral-900 hover:bg-neutral-800 flex justify-center items-center rounded-md w-40 h-40 overflow-hidden">
+            {playlist.imageFile ? (
               <>
                 <img
-                  src={playlist.imageURL}
+                  src={URL.createObjectURL(playlist.imageFile)}
                   alt="playlist"
                   className="object-cover w-full h-full"
                 />
@@ -61,9 +61,9 @@ const PlaylistForm = ({ onToggleForm }: PlaylistFormProps) => {
               <>
                 <label
                   htmlFor="image"
-                  className="cursor-pointer bg-gray-700 py-2 px-3  border border-gray-600 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-300 hover:bg-gray-600"
+                  className="cursor-pointer bg-gray-700 py-2 px-3 border border-gray-600 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-300 hover:bg-gray-600"
                 >
-                  <ImagePlus className="h-full w-full  inline-block mr-2" />
+                  <ImagePlus className="h-full w-full inline-block mr-2" />
                   Upload Image
                 </label>
               </>
@@ -88,6 +88,7 @@ const PlaylistForm = ({ onToggleForm }: PlaylistFormProps) => {
                 }))
               }
               className="bg-neutral-800 text-white placeholder-neutral-400 px-4 py-2 rounded focus:outline-none"
+              placeholder="Tiêu đề"
             />
             <textarea
               className="bg-neutral-800 text-white placeholder-neutral-400 px-4 py-2 rounded focus:outline-none resize-none"
@@ -107,7 +108,7 @@ const PlaylistForm = ({ onToggleForm }: PlaylistFormProps) => {
         <div className="flex justify-end">
           <button
             className="bg-white text-black font-medium px-6 py-2 rounded-full hover:bg-gray-300 transition"
-            onClick={hanldeUpdatePlaylist}
+            onClick={handleUpdatePlaylist}
           >
             Lưu
           </button>

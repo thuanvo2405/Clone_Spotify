@@ -1,14 +1,24 @@
 import { create } from "zustand";
 import { axiosInstance } from "@/lib/axios";
 import { Playlist, Song } from "@/types";
+import toast from "react-hot-toast";
+
+interface UpdatePlaylistData {
+  title?: string;
+  description?: string;
+  imageFile?: File;
+}
 
 interface PlaylistStore {
   playlists: Playlist[];
   isLoading: boolean;
   error: string | null;
   songsInPlaylist: Song[];
+  detailPlaylist: Playlist | null;
+  popularPlaylist: Playlist[];
 
   fetchMyPlaylists: () => Promise<void>;
+  fetchPopularPlaylist: () => Promise<void>;
   createPlaylist: () => Promise<Playlist | null>;
   updatePlaylist: (
     playlistID: string,
@@ -19,6 +29,8 @@ interface PlaylistStore {
   removeSongFromPlaylist: (playlistID: string, songID: string) => Promise<void>;
   togglePlaylistVisibility: (playlistID: string) => Promise<void>;
   getSongsInPlaylist: (playlistID: string) => Promise<void>;
+  getDeatilPlaylist: (playlistID: string) => Promise<void>;
+
   reset: () => void;
 }
 
@@ -27,12 +39,26 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
   isLoading: false,
   error: null,
   songsInPlaylist: [],
+  detailPlaylist: null,
+  popularPlaylist: [],
 
   fetchMyPlaylists: async () => {
     set({ isLoading: true, error: null });
     try {
       const res = await axiosInstance.get("/playlists/me");
       set({ playlists: res.data });
+    } catch (err: any) {
+      set({ error: err.response?.data?.error || "Failed to load playlists" });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchPopularPlaylist: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await axiosInstance.get("/playlists/popular-playlist");
+      set({ popularPlaylist: res.data });
     } catch (err: any) {
       set({ error: err.response?.data?.error || "Failed to load playlists" });
     } finally {
@@ -56,32 +82,47 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
     }
   },
 
-  updatePlaylist: async (playlistID, data) => {
+  updatePlaylist: async (playlistID: string, data: UpdatePlaylistData) => {
     set({ isLoading: true, error: null });
+
     if (!playlistID || !data) {
       set({ error: "Playlist ID and data are required" });
       set({ isLoading: false });
       return;
     }
-    console.log(data);
+
+    const formData = new FormData();
+    if (data.title !== undefined && data.title.trim() !== "") {
+      formData.append("title", data.title);
+    }
+    if (data.description !== undefined && data.description.trim() !== "") {
+      formData.append("description", data.description);
+    }
+
+    if (data.imageFile) formData.append("imageFile", data.imageFile);
+
     try {
-      const res = await axiosInstance.put(`/playlists/${playlistID}`, data);
-      console.log(5);
+      const res = await axiosInstance.put(
+        `/playlists/${playlistID}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
       set((state) => ({
         playlists: state.playlists.map((p) =>
           p._id === playlistID ? res.data : p
         ),
       }));
-      console.log(6);
     } catch (err: any) {
-      console.log(7);
-
+      // Xử lý lỗi
       set({
         error: err.response?.data?.error || "Failed to update playlist",
       });
     } finally {
-      console.log(8);
-
       set({ isLoading: false });
     }
   },
@@ -89,14 +130,12 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
   deletePlaylist: async (playlistID) => {
     set({ isLoading: true, error: null });
     try {
-      console.log(1);
-      const res = await axiosInstance.delete(`/playlists/${playlistID}`);
-      console.log("Logs from backend:", res.data.logs);
+      await axiosInstance.delete(`/playlists/${playlistID}`);
       set((state) => ({
         playlists: state.playlists.filter((p) => p._id !== playlistID),
       }));
     } catch (err: any) {
-      console.error("Error logs from backend:", err.response?.data?.logs);
+      toast.error(err.response?.data?.error);
       set({ error: err.response?.data?.error || "Failed to delete playlist" });
     } finally {
       set({ isLoading: false });
@@ -119,6 +158,7 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
       set({
         error: err.response?.data?.error || "Failed to add song to playlist",
       });
+      toast.error(err.response?.data?.error);
     } finally {
       set({ isLoading: false });
     }
@@ -143,6 +183,7 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
         error:
           err.response?.data?.error || "Failed to remove song from playlist",
       });
+      toast.error(err.response?.data?.error);
     } finally {
       set({ isLoading: false });
     }
@@ -154,15 +195,21 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
       const res = await axiosInstance.put(
         `/playlists/${playlistID}/visibility`
       );
+
       set((state) => ({
         playlists: state.playlists.map((p) =>
           p._id === playlistID ? res.data : p
         ),
+        detailPlaylist:
+          state.detailPlaylist?._id === playlistID
+            ? res.data
+            : state.detailPlaylist,
       }));
     } catch (err: any) {
       set({
         error: err.response?.data?.error || "Failed to change visibility",
       });
+      toast.error(err.response?.data?.error);
     } finally {
       set({ isLoading: false });
     }
@@ -173,6 +220,21 @@ export const usePlaylistStore = create<PlaylistStore>((set) => ({
     try {
       const res = await axiosInstance.get(`/playlists/${playlistID}/songs`);
       set({ songsInPlaylist: res.data });
+    } catch (err: any) {
+      set({
+        error: err.response?.data?.error || "Failed to load songs",
+      });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  getDeatilPlaylist: async (playlistID: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await axiosInstance.get(`/playlists/detail/${playlistID}`);
+      set({ detailPlaylist: res.data });
+      console.log(res);
     } catch (err: any) {
       set({
         error: err.response?.data?.error || "Failed to load songs",

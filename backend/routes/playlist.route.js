@@ -8,25 +8,31 @@ import {
   getMyPlayList,
   updatePlaylist,
   getSongFromPlaylist,
+  getInfoPlaylist,
+  getPopularPlaylist,
 } from "../controllers/playlist.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 const router = express.Router();
-router.use(protectRoute);
 
 router.get("/:id/songs", getSongFromPlaylist); //done
-
+router.get("/detail/:id", protectRoute, getInfoPlaylist);
 // Playlist
-router.post("/", createPlaylist); //done
-router.put("/:playlistID", updatePlaylist); //doing
-router.delete("/:playlistID", deletePlaylist); //done
+router.post("/", protectRoute, createPlaylist); //done
+router.put("/:playlistID", protectRoute, updatePlaylist); //doing
+router.delete("/:playlistID", protectRoute, deletePlaylist); //done
 
-router.post("/add-song", addSongPlaylist); //done
-router.delete("/:playlistID/delete-song/:songID", deleteSongPlaylist); //done
+router.post("/add-song", protectRoute, addSongPlaylist); //done
+router.delete(
+  "/:playlistID/delete-song/:songID",
+  protectRoute,
+  deleteSongPlaylist
+); //done
 
 // Thay đổi chế độ công khai
-router.put("/:playlistID/visibility", changeVisibility);
+router.put("/:playlistID/visibility", protectRoute, changeVisibility); //done
 
 // Lấy danh sách playlist của người dùng
-router.get("/me", getMyPlayList); //done
+router.get("/me", protectRoute, getMyPlayList); //done
+router.get("/popular-playlist", getPopularPlaylist); //done
 
 export default router;

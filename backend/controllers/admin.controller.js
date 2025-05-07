@@ -40,7 +40,6 @@ export const createSong = async (req, res, next) => {
 
     await song.save();
 
-    // if song belongs to an album, update the album's songs array
     if (albumID) {
       await Album.findByIdAndUpdate(albumID, {
         $push: { songs: song._id },

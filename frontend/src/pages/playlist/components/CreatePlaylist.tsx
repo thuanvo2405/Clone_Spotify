@@ -11,9 +11,6 @@ import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import PlaylistForm from "./PlaylistForm";
 
-const image =
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHMnibsrCdQM4GqpfmfWwgYmyapcwUVywwrQ&s";
-
 const CreatePlaylist = () => {
   const [searchInput, setSearchInput] = useState("");
   const [toggleEditForm, setToggleEditForm] = useState(false);
@@ -25,6 +22,10 @@ const CreatePlaylist = () => {
     songsInPlaylist,
     removeSongFromPlaylist,
     deletePlaylist,
+    detailPlaylist,
+    playlists,
+    togglePlaylistVisibility,
+    getDeatilPlaylist,
   } = usePlaylistStore();
   const { currentSong, isPlaying, playAlbum } = usePlayerStore();
   const handlePlaySong = (index: number) => {
@@ -32,13 +33,16 @@ const CreatePlaylist = () => {
   };
   const { id } = useParams();
   const playlistId = id?.toString();
-  console.log(playlistId);
   const navigate = useNavigate();
-
   useEffect(() => {
     getSongsInPlaylist(playlistId!);
-  }, [getSongsInPlaylist, playlistId]);
+    getDeatilPlaylist(playlistId!);
+  }, [getSongsInPlaylist, getDeatilPlaylist, playlistId]);
 
+  console.log(playlists);
+  console.log(detailPlaylist);
+  const isOwner = playlists.some((item) => item._id === detailPlaylist?._id);
+  console.log(isOwner);
   const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (searchInput.trim() === "") {
@@ -57,69 +61,93 @@ const CreatePlaylist = () => {
   return (
     <>
       {toggleEditForm ? (
-        <PlaylistForm onToggleForm={handleTogglePlaylistForm} />
+        <PlaylistForm
+          onToggleForm={handleTogglePlaylistForm}
+          playlistId={playlistId!}
+        />
       ) : null}
       <div className="rounded-md overflow-hidden h-full bg-gradient-to-b from-zinc-800 to-zinc-900">
         <ScrollArea className="h-full">
           <div className="h-72 bg-neutral-800 flex items-end px-8 gap-8 py-6 relative">
             <div className="absolute top-4 right-4">
-              <button
-                className="p-2 rounded-full bg-neutral-700/50 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-300 group"
-                aria-label="Xóa playlist"
-                onClick={async () => {
-                  await deletePlaylist(playlistId!);
-                  await navigate("/playlist");
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-7 w-7"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
+              {isOwner ? (
+                <button
+                  className="p-2 rounded-full bg-neutral-700/50 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-300 group"
+                  aria-label="Xóa playlist"
+                  onClick={async () => {
+                    try {
+                      const res = await deletePlaylist(playlistId!);
+
+                      if (res !== undefined) {
+                        await navigate("/playlist");
+                      } else {
+                        console.error("Xóa playlist thất bại");
+                      }
+                    } catch (error) {
+                      console.error("Đã xảy ra lỗi khi xóa playlist:", error);
+                    }
+                  }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-800 text-xs text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                  Xóa playlist
-                </div>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-7 w-7"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-800 text-xs text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                    Xóa playlist
+                  </div>
+                </button>
+              ) : null}
             </div>
 
             <img
               className="h-52 w-52 object-cover shadow-2xl rounded-md cursor-pointer z-10"
               alt="playlist cover"
-              src={image}
-              onClick={handleTogglePlaylistForm}
+              src={detailPlaylist?.imageURL}
+              onClick={isOwner ? handleTogglePlaylistForm : undefined}
             />
 
             <div className="flex-1 flex flex-col justify-end h-52">
               <span className="text-sm text-white/70 font-medium mb-2">
-                Danh sách phát công khai
+                {detailPlaylist?.isPublic ? "Public " : "Private "}
+                Playlist
               </span>
               <h1 className="text-5xl font-bold text-white mb-2">
-                Danh sách phát của tôi #2
+                {detailPlaylist?.title}
               </h1>
-              <span className="text-white/80 text-sm">qwe</span>
-              <span className="text-white/90 text-sm font-semibold">
-                device •
+              <span className="text-white/80 text-sm">
+                {detailPlaylist?.description}
               </span>
-              <div className="flex items-center space-x-4">
-                <Switch
-                  id="airplane-mode"
-                  className="h-7 w-14 rounded-full bg-neutral-600/50 data-[state=checked]:bg-green-500 transition-colors duration-200"
-                />
-                <Label
-                  htmlFor="airplane-mode"
-                  className="text-lg font-semibold text-white/90 hover:text-white transition-colors cursor-pointer"
-                >
-                  Airplane Mode
-                </Label>
-              </div>
+              <span className="text-white/90 text-sm font-semibold">
+                device •{detailPlaylist?.user.fullName}
+              </span>
+              {isOwner ? (
+                <div className="flex items-center space-x-4">
+                  <Switch
+                    id="statusPlaylist"
+                    checked={detailPlaylist?.isPublic}
+                    onCheckedChange={async () => {
+                      await togglePlaylistVisibility(playlistId!);
+                      await getDeatilPlaylist(playlistId!);
+                    }}
+                    className="h-7 w-14 rounded-full bg-neutral-600/50 data-[state=checked]:bg-green-500 transition-colors duration-200"
+                  />
+                  <Label
+                    htmlFor="statusPlaylist"
+                    className="text-lg font-semibold text-white/90 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {detailPlaylist?.isPublic ? "Public" : "Private"}
+                  </Label>
+                </div>
+              ) : null}
             </div>
           </div>
           <div className="p-8">
@@ -204,8 +232,8 @@ const CreatePlaylist = () => {
             </div>
 
             {/* Suggested Songs Section */}
-            <h2 className="text-xl font-bold text-white mb-4">
-              Hãy cùng tìm nội dung cho danh sách phát của bạn
+            <h2 className="text-xl font-bold text-white my-4">
+              Seaching the songs for your playlist
             </h2>
 
             <div className="mb-6">
@@ -213,7 +241,7 @@ const CreatePlaylist = () => {
                 <form onSubmit={handleSearchSubmit} className="relative w-full">
                   <input
                     type="text"
-                    placeholder="Tìm kiếm bài hát"
+                    placeholder="Looking"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     className="w-full bg-neutral-800 text-white rounded px-4 py-2 pr-10 placeholder-white/60 focus:outline-none"

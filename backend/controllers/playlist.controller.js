@@ -3,6 +3,22 @@ import { Playlist } from "../models/playlist.model.js";
 import { Song } from "../models/song.model.js";
 import { User } from "./../models/user.model.js";
 
+const uploadToCloudinary = async (file) => {
+  try {
+    if (!file) {
+      throw new Error("Không có file để tải lên");
+    }
+
+    const result = await cloudinary.uploader.upload(file.tempFilePath, {
+      resource_type: "auto",
+    });
+
+    return result.secure_url;
+  } catch (error) {
+    console.error("Lỗi khi tải lên Cloudinary:", error);
+    throw new Error(`Lỗi khi tải lên Cloudinary: ${error.message}`);
+  }
+};
 
 export const createPlaylist = async (req, res) => {
   try {
@@ -25,47 +41,39 @@ export const createPlaylist = async (req, res) => {
 };
 
 export const updatePlaylist = async (req, res) => {
-  console.log(1);
   try {
     const { playlistID } = req.params;
-    const { title, description, imageURL } = req.body;
-    const clerkID = req.auth.userId;
-    let cloudinaryResponse = null;
-    if (imageURL) {
-      cloudinaryResponse = await cloudinary.uploader.upload(imageURL, {
-        folder: "playlists",
-      });
-    }
-    console.log(cloudinaryResponse);
-    const user = await User.findOne({ clerkID });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
     const playlist = await Playlist.findById(playlistID);
     if (!playlist) {
-      return res.status(404).json({ error: "Playlist not found" });
+      return res.status(404).json({ error: "Không tìm thấy playlist" });
+    }
+
+    const clerkID = req.auth.userId;
+    const user = await User.findOne({ clerkID });
+    if (!user) {
+      return res.status(404).json({ error: "Không tìm thấy người dùng" });
     }
 
     if (!playlist.user.equals(user._id)) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Không có quyền sửa playlist này" });
+    }
+
+    const { title, description } = req.body;
+    const imageFile = req.files?.imageFile;
+
+    if (imageFile) {
+      const imageURL = await uploadToCloudinary(imageFile);
+      playlist.imageURL = imageURL;
     }
 
     if (title !== undefined) playlist.title = title;
     if (description !== undefined) playlist.description = description;
 
-    if (cloudinaryResponse) {
-      playlist.imageURL = cloudinaryResponse.secure_url;
-    } else if (imageURL === undefined) {
-      playlist.imageURL = "/defaultImagepPlaylist.png";
-    }
-    console.log(1);
-
     await playlist.save();
     res.json(playlist);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Lỗi khi cập nhật playlist:", error);
+    res.status(500).json({ error: "Lỗi server nội bộ" });
   }
 };
 
@@ -80,8 +88,9 @@ export const deletePlaylist = async (req, res) => {
     }
 
     if (!playlist.user.equals(user._id)) {
-      return res.status(403).json({ error: "Unauthorized access" });
+      return res.status(403).json({ error: "You don't have permission." });
     }
+
     await Playlist.findByIdAndDelete(playlistID);
     res.json({ message: "Playlist deleted successfully" });
   } catch (error) {
@@ -96,8 +105,9 @@ export const addSongPlaylist = async (req, res) => {
     const user = await User.findOne({ clerkID });
     const playlist = await Playlist.findById(playlistID);
     if (!playlist) return res.status(404).json({ error: "Playlist not found" });
-    if (!playlist.user.equals(user._id))
-      return res.status(403).json({ error: "Unauthorized" });
+    if (!playlist.user.equals(user._id)) {
+      return res.status(403).json({ error: "You don't have permission." });
+    }
 
     const song = await Song.findById(songID);
     if (!song) return res.status(404).json({ error: "Song not found" });
@@ -132,9 +142,7 @@ export const deleteSongPlaylist = async (req, res) => {
     }
 
     if (!playlist.user.equals(user._id)) {
-      return res
-        .status(403)
-        .json({ error: "Unauthorized access to this playlist" });
+      return res.status(403).json({ error: "You don't have permission." });
     }
 
     const updatedPlaylist = await Playlist.findByIdAndUpdate(
@@ -152,16 +160,19 @@ export const deleteSongPlaylist = async (req, res) => {
 
 export const changeVisibility = async (req, res) => {
   try {
-    const { playlistID } = req.body;
-    const userID = req.auth.userId;
-
+    const { playlistID } = req.params;
+    const clerkID = req.auth.userId;
+    const user = await User.findOne({ clerkID });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
     const playlist = await Playlist.findById(playlistID);
     if (!playlist) {
       return res.status(404).json({ error: "Playlist not found" });
     }
 
-    if (!playlist.user.equals(userID)) {
-      return res.status(403).json({ error: "Unauthorized" });
+    if (!playlist.user.equals(user._id)) {
+      return res.status(403).json({ error: "You don't have permission." });
     }
 
     playlist.isPublic = !playlist.isPublic;
@@ -191,6 +202,20 @@ export const getMyPlayList = async (req, res) => {
   }
 };
 
+export const getPopularPlaylist = async (req, res) => {
+  try {
+    const playlists = await Playlist.aggregate([
+      { $match: { isPublic: true } },
+      { $sample: { size: 4 } },
+    ]);
+
+    res.json(playlists);
+  } catch (error) {
+    console.error("Error fetching playlists: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const getSongFromPlaylist = async (req, res) => {
   try {
     const { id: playlistID } = req.params;
@@ -201,6 +226,25 @@ export const getSongFromPlaylist = async (req, res) => {
     }
 
     res.json(playlist.songs);
+  } catch (error) {
+    console.error("Error fetching songs in playlist:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getInfoPlaylist = async (req, res) => {
+  try {
+    const { id: playlistID } = req.params;
+
+    const playlist = await Playlist.findOne({ _id: playlistID })
+      .populate("user", "name")
+      .exec();
+
+    if (!playlist) {
+      return res.status(404).json({ error: "Playlist not found" });
+    }
+
+    res.json(playlist);
   } catch (error) {
     console.error("Error fetching songs in playlist:", error);
     res.status(500).json({ error: "Internal server error" });
